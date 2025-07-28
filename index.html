@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Vehicle Testing - Team Signup</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 2rem;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    table-layout: fixed;
+  }
+  th, td {
+    border: 1px solid #ccc;
+    padding: 0.5rem;
+    text-align: center;
+    word-wrap: break-word;
+  }
+  th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+  }
+  .day-header {
+    background-color: #e0f7fa;
+    font-weight: bold;
+  }
+  .signup {
+    cursor: pointer;
+    background-color: #f0f0f0;
+    transition: background-color 0.3s ease;
+  }
+  .signup:hover {
+    background-color: #d0f0d0;
+  }
+  .time-group {
+    text-align: center;
+    font-weight: bold;
+    background-color: #dfe6e9;
+  }
+</style>
+
+<!-- Firebase JS SDK (compat versions) -->
+<script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-database-compat.js"></script>
+
+</head>
+<body>
+
+<h1>Vehicle Testing – Team Signup</h1>
+<p>Click on time slot below to sign up. The schedule updates live for everyone.</p>
+
+<table id="signupTable"></table>
+
+<script>
+  // Your Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyCWTQYA-oSsf11jZK9s984XsoAT2IGamHY",
+  authDomain: "testing-c58cf.firebaseapp.com",
+  databaseURL: "https://testing-c58cf-default-rtdb.firebaseio.com",
+  projectId: "testing-c58cf",
+  storageBucket: "testing-c58cf.firebasestorage.app",
+  messagingSenderId: "294400817316",
+  appId: "1:294400817316:web:eba557181e6cd302fd8e31"
+};
+
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+
+  const slotGroups = {
+    'Morning': ['9–11', '11–13'],
+    'Midday': ['13–15'],
+    'Evening': ['15–17']
+  };
+
+  const table = document.getElementById('signupTable');
+  let nameInput = prompt("Enter your name:");
+
+  if (!nameInput) {
+    nameInput = "Anonymous";
+  }
+
+  function createTable(data) {
+    table.innerHTML = '';
+
+    // First header row: blank + group headers with colspan
+    const header = table.insertRow();
+    header.insertCell().textContent = 'Day / Time';
+
+    for (const group in slotGroups) {
+      const colspan = slotGroups[group].length;
+      const th = document.createElement('th');
+      th.className = 'time-group';
+      th.colSpan = colspan;
+      th.textContent = group;
+      header.appendChild(th);
+    }
+
+    // Second header row: empty cell + individual time slots
+    const subHeader = table.insertRow();
+    subHeader.insertCell(); // empty cell for day column
+
+    Object.values(slotGroups).flat().forEach(slot => {
+      const th = document.createElement('th');
+      th.textContent = slot;
+      subHeader.appendChild(th);
+    });
+
+    // Create table rows for each day and slots
+    days.forEach(day => {
+      const row = table.insertRow();
+      const dayCell = row.insertCell();
+      dayCell.textContent = day;
+      dayCell.className = 'day-header';
+
+      Object.values(slotGroups).flat().forEach(slot => {
+        const key = `${day}_${slot}`;
+        const cell = row.insertCell();
+        cell.className = 'signup';
+        cell.textContent = data[key] || '';
+        cell.onclick = () => {
+          if (!nameInput) {
+            alert("Please reload and enter your name.");
+            return;
+          }
+          db.ref('signups/' + key).set(nameInput);
+        };
+      });
+    });
+  }
+
+  // Listen for database changes and update the table live
+  db.ref('signups').on('value', snapshot => {
+    const data = snapshot.val() || {};
+    createTable(data);
+  });
+
+  // Debug logs (optional)
+  console.log("Firebase initialized:", firebase.app().name);
+  db.ref('signups').once('value').then(snapshot => {
+    console.log("Current signups:", snapshot.val());
+  });
+
+</script>
+
+</body>
+</html>
